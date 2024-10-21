@@ -1,4 +1,5 @@
 //É a classe responsável por traduzir requisições HTTP e produzir respostas HTTP
+import Categoria from "../Modelo/categoria.js";
 import Produto from "../Modelo/produto.js";
 
 export default class ProdutoCtrl{
@@ -6,6 +7,7 @@ export default class ProdutoCtrl{
     gravar(requisicao, resposta){
         //preparar o destinatário que a resposta estará no formato JSON
         resposta.type("application/json");
+        const categoria = new Categoria(categoria.codigo);
         //Verificando se o método da requisição é POST e conteúdo é JSON
         if (requisicao.method == 'POST' && requisicao.is("application/json")){
             const descricao  = requisicao.body.descricao;
@@ -14,15 +16,19 @@ export default class ProdutoCtrl{
             const qtdEstoque = requisicao.body.qtdEstoque;
             const urlImagem  = requisicao.body.urlImagem;
             const dataValidade = requisicao.body.dataValidade;
+            const categoria = requisicao.body.categoria;
+            const categ = new Categoria(categoria.codigo);
+            categ.consultar(categoria.codigo).then((listaCategoria)=>{})
             //pseudo validação
             if (descricao && precoCusto > 0 &&
                 precoVenda > 0 && qtdEstoque >= 0 &&
-                urlImagem && dataValidade)
+                urlImagem && dataValidade && categoria.codigo>0)
             {
                 //gravar o produto
+                const categoria = new Categoria(categoria.codigo);
                 const produto = new Produto(0,
                     descricao, precoCusto, precoVenda,
-                    qtdEstoque,urlImagem,dataValidade);
+                    qtdEstoque,urlImagem,dataValidade, categ);
                 
                 produto.incluir()
                 .then(()=>{
@@ -65,6 +71,7 @@ export default class ProdutoCtrl{
         //preparar o destinatário que a resposta estará no formato JSON
         resposta.type("application/json");
         //Verificando se o método da requisição é POST e conteúdo é JSON
+        const categoria = new Categoria(categoria.codigo);
         if ((requisicao.method == 'PUT' || requisicao.method == 'PATCH') && requisicao.is("application/json")){
             //o código será extraída da URL (padrão REST)
             const codigo     = requisicao.params.codigo;
@@ -73,16 +80,36 @@ export default class ProdutoCtrl{
             const precoVenda = requisicao.body.precoVenda;
             const qtdEstoque = requisicao.body.qtdEstoque;
             const urlImagem  = requisicao.body.urlImagem;
-            const dataValidade = requisicao.body.dataValidade;
+            const dataValidade = requisicao.body.dataValidade; 
+            const categoria = requisicao.body.categoria;
+            categ.consultar(categoria.codigo).then((lista)=>{
+                if(lista.lenght>0)
+                {
+
+                }
+                else
+                {
+                    resposta.status(400).json({
+                        "status":false,
+                        "mensagem": "Não foi possível validar a categoria!"
+                    })
+                }
+            }).catch((erro)=>{
+                resposta.status(500).json({
+                    "status":false,
+                    "mensagem": "Não foi possível validar a categoria!"
+                })
+            });
             //pseudo validação
             if (codigo > 0 && descricao && precoCusto > 0 &&
                 precoVenda > 0 && qtdEstoque >= 0 &&
-                urlImagem && dataValidade)
+                urlImagem && dataValidade && categoria.codigo>0)
             {
                 //alterar o produto
+                const categoria = new Categoria(categoria.codigo);
                 const produto = new Produto(codigo,
                     descricao, precoCusto, precoVenda,
-                    qtdEstoque,urlImagem,dataValidade);
+                    qtdEstoque,urlImagem,dataValidade, categ);
                 produto.alterar()
                 .then(()=>{
                     resposta.status(200).json({
